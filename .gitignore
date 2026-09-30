@@ -1,0 +1,50 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+
+# Frontend dependencies and builds
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+
+# Tool caches
+.vite/
+.cache/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Test results and coverage
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+playwright-report/
+test-results/
+
+# Logs
+logs/
+*.log
+
+# Editor files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
