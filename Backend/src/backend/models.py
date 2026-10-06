@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -178,7 +178,7 @@ class Review(SQLModel, table=True):
     comment: str | None = None
     stars: int | None = Field(default=None, ge=1, le=5)
     created_at: datetime = Field(
-        default_factory=datetime.now
+        default_factory=lambda: datetime.now(timezone.utc)
     )
 
     user_id: int = Field(
