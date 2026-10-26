@@ -5,7 +5,7 @@ type MovieCardProps = {
 
 function MovieCard({ name, genre }: MovieCardProps) {
   return (
-    <div>
+    <div className="movie-card">
       <h2>{name}</h2>
       <p>{genre}</p>
     </div>

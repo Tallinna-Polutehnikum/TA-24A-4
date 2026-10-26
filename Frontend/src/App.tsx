@@ -35,14 +35,16 @@ function App() {
   return (
     <main>
       <h1>Filmid</h1>
-
-    {movies.map((movie) => (
-      <MovieCard
-        key={movie.id}
-        name={movie.name}
-        genre={movie.genre}
-      />
-    ))}
+    
+      <div className="movie-list">
+        {movies.map((movie) => (
+          <MovieCard
+            key={movie.id}
+            name={movie.name}
+            genre={movie.genre}
+          />
+        ))}
+      </div>
     </main>
   )
 }
