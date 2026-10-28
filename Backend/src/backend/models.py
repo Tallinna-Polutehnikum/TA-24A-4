@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import CheckConstraint, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 class SeatType(str, Enum):
@@ -174,6 +174,7 @@ class Ticket(SQLModel, table=True):
 
 class Review(SQLModel, table=True):
     __tablename__ = "reviews"
+    __table_args__ = (CheckConstraint("stars >= 1 AND stars <= 5"),)
 
     id: int | None = Field(default=None, primary_key=True)
 

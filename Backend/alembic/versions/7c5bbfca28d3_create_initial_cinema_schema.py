@@ -63,7 +63,8 @@ def upgrade() -> None:
     sa.Column('movie_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['movie_id'], ['movies.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.CheckConstraint('stars >= 1 AND stars <= 5')
     )
     op.create_table('seats',
     sa.Column('id', sa.Integer(), nullable=False),
