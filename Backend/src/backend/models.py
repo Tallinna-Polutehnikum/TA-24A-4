@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 class SeatType(str, Enum):
@@ -141,6 +142,7 @@ class Seat(SQLModel, table=True):
 
 class Ticket(SQLModel, table=True):
     __tablename__ = "tickets"
+    __table_args__ = (UniqueConstraint("session_id", "seat_id"),)
 
     id: int | None = Field(default=None, primary_key=True)
 

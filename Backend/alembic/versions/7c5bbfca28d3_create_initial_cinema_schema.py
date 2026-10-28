@@ -92,7 +92,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['seat_id'], ['seats.id'], ),
     sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('session_id', 'seat_id')
     )
     # ### end Alembic commands ###
 

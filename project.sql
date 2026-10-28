@@ -118,7 +118,9 @@ CREATE TABLE IF NOT EXISTS "tickets" (
         REFERENCES "users"("id"),
 
     FOREIGN KEY ("seat_id")
-        REFERENCES "seats"("id")
+        REFERENCES "seats"("id"),
+
+    UNIQUE ("session_id", "seat_id")
 );
 
 
