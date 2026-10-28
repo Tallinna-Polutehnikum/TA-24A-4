@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 
+from sqlalchemy import CheckConstraint, Enum as SAEnum, UniqueConstraint, text
 from sqlmodel import Field, Relationship, SQLModel
 
 class SeatType(str, Enum):
@@ -31,6 +32,10 @@ class Genre(str, Enum):
     DOCUMENTARY = "documentary"
 
 
+def pg_enum(enum, name):
+    return SAEnum(enum, name=name, values_callable=lambda e: [m.value for m in e])
+
+
 class CinemaLocation(SQLModel, table=True):
     __tablename__ = "cinema_locations"
 
@@ -38,7 +43,7 @@ class CinemaLocation(SQLModel, table=True):
     name: str = Field(max_length=255)
     address: str = Field(max_length=255)
     hall_count: int
-    is_active: bool = True
+    is_active: bool = Field(default=True, sa_column_kwargs={"server_default": text("true")})
 
     halls: list["CinemaHall"] = Relationship(back_populates="location")
 
@@ -69,7 +74,10 @@ class Movie(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=255)
-    genre: Genre
+
+    genres: list["MovieGenre"] = Relationship(
+        back_populates="movie"
+    )
 
     sessions: list["Session"] = Relationship(
         back_populates="movie"
@@ -77,6 +85,20 @@ class Movie(SQLModel, table=True):
 
     reviews: list["Review"] = Relationship(
         back_populates="movie"
+    )
+
+class MovieGenre(SQLModel, table=True):
+    __tablename__ = "movie_genres"
+
+    movie_id: int = Field(
+        foreign_key="movies.id",
+        primary_key=True
+    )
+
+    genre: Genre = Field(sa_type=pg_enum(Genre, "genre"), primary_key=True)
+
+    movie: Movie = Relationship(
+        back_populates="genres"
     )
 
 class Session(SQLModel, table=True):
@@ -129,7 +151,7 @@ class Seat(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     row: int
     number: int
-    seat_type: SeatType
+    seat_type: SeatType = Field(sa_type=pg_enum(SeatType, "seat_type"))
 
     hall_id: int = Field(
         foreign_key="cinema_halls.id"
@@ -141,10 +163,11 @@ class Seat(SQLModel, table=True):
 
 class Ticket(SQLModel, table=True):
     __tablename__ = "tickets"
+    __table_args__ = (UniqueConstraint("session_id", "seat_id"),)
 
     id: int | None = Field(default=None, primary_key=True)
 
-    ticket_type: TicketType
+    ticket_type: TicketType = Field(sa_type=pg_enum(TicketType, "ticket_type"))
 
     session_id: int = Field(
         foreign_key="sessions.id"
@@ -172,13 +195,15 @@ class Ticket(SQLModel, table=True):
 
 class Review(SQLModel, table=True):
     __tablename__ = "reviews"
+    __table_args__ = (CheckConstraint("stars >= 1 AND stars <= 5"),)
 
     id: int | None = Field(default=None, primary_key=True)
 
     comment: str | None = None
     stars: int | None = Field(default=None, ge=1, le=5)
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column_kwargs={"server_default": text("now()")},
     )
 
     user_id: int = Field(

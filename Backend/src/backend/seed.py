@@ -10,6 +10,7 @@ from backend.models import (
     CinemaLocation,
     Genre,
     Movie,
+    MovieGenre,
     Review,
     Seat,
     SeatType,
@@ -133,7 +134,6 @@ def seed_database():
         for name in movie_names:
             movie = Movie(
                 name=name,
-                genre=random.choice(genres),
             )
 
             db.add(movie)
@@ -143,6 +143,15 @@ def seed_database():
 
         for movie in movies:
             db.refresh(movie)
+
+
+        # MOVIE GENRES - 1 to 3 per movie
+
+        for movie in movies:
+            for genre in random.sample(genres, random.randint(1, 3)):
+                db.add(MovieGenre(movie_id=movie.id, genre=genre))
+
+        db.commit()
 
 
         # USERS
@@ -170,18 +179,19 @@ def seed_database():
 
         cinema_sessions = []
 
-        start_date = datetime.now(timezone.utc)
+        start_date = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        for _ in range(120):
-            hall = random.choice(halls)
+        # Fixed 3-hour slots, each (hall, day, hour) used once, so screenings cannot overlap
+        slots = random.sample(
+            [(hall, day, hour) for hall in halls for day in range(31) for hour in (10, 13, 16, 19, 22)],
+            120,
+        )
+
+        for hall, day, hour in slots:
             movie = random.choice(movies)
 
             cinema_session = CinemaSession(
-                start_time=start_date
-                + timedelta(
-                    days=random.randint(0, 30),
-                    hours=random.randint(10, 22),
-                ),
+                start_time=start_date + timedelta(days=day, hours=hour),
                 movie_id=movie.id,
                 hall_id=hall.id,
             )
