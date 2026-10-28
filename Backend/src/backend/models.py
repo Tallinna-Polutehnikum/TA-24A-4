@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 
-from sqlalchemy import CheckConstraint, Enum as SAEnum, UniqueConstraint
+from sqlalchemy import CheckConstraint, Enum as SAEnum, UniqueConstraint, text
 from sqlmodel import Field, Relationship, SQLModel
 
 class SeatType(str, Enum):
@@ -43,7 +43,7 @@ class CinemaLocation(SQLModel, table=True):
     name: str = Field(max_length=255)
     address: str = Field(max_length=255)
     hall_count: int
-    is_active: bool = True
+    is_active: bool = Field(default=True, sa_column_kwargs={"server_default": text("true")})
 
     halls: list["CinemaHall"] = Relationship(back_populates="location")
 
@@ -185,7 +185,8 @@ class Review(SQLModel, table=True):
     comment: str | None = None
     stars: int | None = Field(default=None, ge=1, le=5)
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column_kwargs={"server_default": text("now()")},
     )
 
     user_id: int = Field(

@@ -27,7 +27,7 @@ def upgrade() -> None:
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('address', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('hall_count', sa.Integer(), nullable=False),
-    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('movies',
@@ -58,7 +58,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('comment', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('stars', sa.Integer(), nullable=True),
-    sa.Column('created_at', sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
+    sa.Column('created_at', sqlmodel.sql.sqltypes.UTCDateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('movie_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['movie_id'], ['movies.id'], ),
