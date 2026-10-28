@@ -27,13 +27,13 @@ def upgrade() -> None:
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('address', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('hall_count', sa.Integer(), nullable=False),
-    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('movies',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
-    sa.Column('genre', sa.Enum('ANIMATION', 'ACTION', 'COMEDY', 'DRAMA', 'HORROR', 'SCIENCE_FICTION', 'ROMANCE', 'THRILLER', 'FANTASY', 'MYSTERY', 'WESTERN', 'DOCUMENTARY', name='genre'), nullable=False),
+    sa.Column('genre', sa.Enum('animation', 'action', 'comedy', 'drama', 'horror', 'science_fiction', 'romance', 'thriller', 'fantasy', 'mystery', 'western', 'documentary', name='genre'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
@@ -58,18 +58,19 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('comment', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('stars', sa.Integer(), nullable=True),
-    sa.Column('created_at', sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
+    sa.Column('created_at', sqlmodel.sql.sqltypes.UTCDateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('movie_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['movie_id'], ['movies.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.CheckConstraint('stars >= 1 AND stars <= 5')
     )
     op.create_table('seats',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('row', sa.Integer(), nullable=False),
     sa.Column('number', sa.Integer(), nullable=False),
-    sa.Column('seat_type', sa.Enum('PREMIUM', 'SUPER_PREMIUM', 'REGULAR', 'DOUBLE', name='seattype'), nullable=False),
+    sa.Column('seat_type', sa.Enum('premium', 'super_premium', 'regular', 'double', name='seat_type'), nullable=False),
     sa.Column('hall_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['hall_id'], ['cinema_halls.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -85,14 +86,15 @@ def upgrade() -> None:
     )
     op.create_table('tickets',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('ticket_type', sa.Enum('REGULAR', 'STUDENT', 'DISCOUNT', name='tickettype'), nullable=False),
+    sa.Column('ticket_type', sa.Enum('regular', 'student', 'discount', name='ticket_type'), nullable=False),
     sa.Column('session_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('seat_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['seat_id'], ['seats.id'], ),
     sa.ForeignKeyConstraint(['session_id'], ['sessions.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('session_id', 'seat_id')
     )
     # ### end Alembic commands ###
 
