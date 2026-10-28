@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from backend.database import engine
-from backend.models import Movie
+from backend.models import Genre, Movie
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,10 +25,24 @@ class HealthResponse(BaseModel):
 def health() -> HealthResponse:
     return HealthResponse(status="ok")
 
-@app.get("/movies")
-def get_movies():
+class MovieResponse(BaseModel):
+    id: int
+    name: str
+    genres: list[Genre]
+
+
+@app.get("/movies", response_model=list[MovieResponse])
+def get_movies() -> list[MovieResponse]:
     with Session(engine) as session:
-        statement = select(Movie)
+        statement = select(Movie).options(selectinload(Movie.genres))
         movies = session.exec(statement).all()
 
-        return movies
+        return [to_movie_response(movie) for movie in movies]
+
+
+def to_movie_response(movie: Movie) -> MovieResponse:
+    return MovieResponse(
+        id=movie.id,
+        name=movie.name,
+        genres=[movie_genre.genre for movie_genre in movie.genres],
+    )

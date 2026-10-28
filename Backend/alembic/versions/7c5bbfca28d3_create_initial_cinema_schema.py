@@ -33,8 +33,13 @@ def upgrade() -> None:
     op.create_table('movies',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
-    sa.Column('genre', sa.Enum('animation', 'action', 'comedy', 'drama', 'horror', 'science_fiction', 'romance', 'thriller', 'fantasy', 'mystery', 'western', 'documentary', name='genre'), nullable=False),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('movie_genres',
+    sa.Column('movie_id', sa.Integer(), nullable=False),
+    sa.Column('genre', sa.Enum('animation', 'action', 'comedy', 'drama', 'horror', 'science_fiction', 'romance', 'thriller', 'fantasy', 'mystery', 'western', 'documentary', name='genre'), nullable=False),
+    sa.ForeignKeyConstraint(['movie_id'], ['movies.id'], ),
+    sa.PrimaryKeyConstraint('movie_id', 'genre')
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -108,6 +113,7 @@ def downgrade() -> None:
     op.drop_table('reviews')
     op.drop_table('cinema_halls')
     op.drop_table('users')
+    op.drop_table('movie_genres')
     op.drop_table('movies')
     op.drop_table('cinema_locations')
     # ### end Alembic commands ###
