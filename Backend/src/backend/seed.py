@@ -10,6 +10,7 @@ from backend.models import (
     CinemaLocation,
     Genre,
     Movie,
+    MovieGenre,
     Review,
     Seat,
     SeatType,
@@ -133,7 +134,6 @@ def seed_database():
         for name in movie_names:
             movie = Movie(
                 name=name,
-                genre=random.choice(genres),
             )
 
             db.add(movie)
@@ -143,6 +143,15 @@ def seed_database():
 
         for movie in movies:
             db.refresh(movie)
+
+
+        # MOVIE GENRES - 1 to 3 per movie
+
+        for movie in movies:
+            for genre in random.sample(genres, random.randint(1, 3)):
+                db.add(MovieGenre(movie_id=movie.id, genre=genre))
+
+        db.commit()
 
 
         # USERS

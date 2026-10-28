@@ -74,7 +74,10 @@ class Movie(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=255)
-    genre: Genre = Field(sa_type=pg_enum(Genre, "genre"))
+
+    genres: list["MovieGenre"] = Relationship(
+        back_populates="movie"
+    )
 
     sessions: list["Session"] = Relationship(
         back_populates="movie"
@@ -82,6 +85,20 @@ class Movie(SQLModel, table=True):
 
     reviews: list["Review"] = Relationship(
         back_populates="movie"
+    )
+
+class MovieGenre(SQLModel, table=True):
+    __tablename__ = "movie_genres"
+
+    movie_id: int = Field(
+        foreign_key="movies.id",
+        primary_key=True
+    )
+
+    genre: Genre = Field(sa_type=pg_enum(Genre, "genre"), primary_key=True)
+
+    movie: Movie = Relationship(
+        back_populates="genres"
     )
 
 class Session(SQLModel, table=True):
