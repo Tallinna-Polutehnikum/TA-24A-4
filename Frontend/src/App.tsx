@@ -1,51 +1,21 @@
-import './App.css'
-import { useEffect, useState } from 'react'
-import MovieCard from './components/MovieCard'
-
-
-type Movie = {
-  id: number
-  name: string
-  genre: string
-}
+import { NavLink, Route, Routes } from 'react-router'
+import { buttonVariants } from '@/components/ui/button'
+import MoviePage from '@/pages/MoviePage'
+import MoviesPage from '@/pages/MoviesPage'
 
 function App() {
-  const [movies, setMovies] = useState<Movie[]>([])
-
-  useEffect(() => {
-    fetch('http://127.0.0.1:8000/movies')
-      .then((response) => {
-        console.log('Response:', response)
-
-        if (!response.ok) {
-          throw new Error('Backend returned an error')
-        }
-
-        return response.json()
-      })
-      .then((data) => {
-        console.log('Movies:', data)
-        setMovies(data)
-      })
-      .catch((error) => {
-        console.error('Movies fetch failed:', error)
-      })
-  }, [])
-
   return (
-    <main>
-      <h1>Filmid</h1>
-    
-      <div className="movie-list">
-        {movies.map((movie) => (
-          <MovieCard
-            key={movie.id}
-            name={movie.name}
-            genre={movie.genre}
-          />
-        ))}
-      </div>
-    </main>
+    <>
+      <header className="sticky top-0 z-10 flex h-16 items-center border-b bg-background px-6">
+        <NavLink to="/" className={({ isActive }) => buttonVariants({ variant: isActive ? 'secondary' : 'ghost' })}>
+          Films
+        </NavLink>
+      </header>
+      <Routes>
+        <Route path="/" element={<MoviesPage />} />
+        <Route path="/movies/:movieId" element={<MoviePage />} />
+      </Routes>
+    </>
   )
 }
 
