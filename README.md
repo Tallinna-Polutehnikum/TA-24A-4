@@ -88,92 +88,81 @@ Broneerimisel peame lisaks API kontrollidele kasutama andmebaasi piiranguid ja t
 
 # Projekti käivitamine
 
-## 1. Environment failid
+Arvutis peavad olemas olema [Docker Desktop](https://www.docker.com/products/docker-desktop/), [uv](https://docs.astral.sh/uv/) ja [Node.js](https://nodejs.org/).
 
-Tee `Database/.env.example` põhjal uus fail:
-Database/.env
-Näiteks:
-POSTGRES_PASSWORD=change_me
+Kõik käsud käivita projekti põhikaustast (`Kino`).
 
-Seejärel tee Backendi jaoks fail:
-Backend/.env
+## Esimene käivitamine
 
-Näiteks:
-DATABASE_URL=postgresql+psycopg://kino:change_me@localhost:5432/kino
+### 1. Tee seadete failid
 
-Mõlemas failis peab olema sama PostgreSQL parool.
-2. PostgreSQL käivitamine Dockeriga
-Mine Database kausta:
+```bash
+echo "POSTGRES_PASSWORD=change_me" > Database/.env
+echo "DATABASE_URL=postgresql+psycopg://kino:change_me@localhost:5432/kino" > Backend/.env
+```
+
+### 2. Käivita andmebaas
+
+```bash
 cd Database
-
-Käivita andmebaas:
 docker compose up -d
+cd ..
+```
 
-Kontrolli, kas andmebaas töötab:
-docker compose ps
+### 3. Käivita backend
 
-Andmebaasi status peaks olema healthy.
-3. Backendi dependency'd
-Mine Backend kausta:
-cd ../Backend
+Ava uus terminal ja jäta see lahti:
 
-Installi vajalikud dependency'd:
-python -m uv sync
+```bash
+cd Backend
+uv sync
+uv run alembic upgrade head
+uv run python -m backend.seed
+uv run fastapi dev main.py --port 8471
+```
 
-4. Migratsioonid
-Käivita Alembic migratsioonid:
-python -m uv run alembic upgrade head
+Backend töötab aadressil http://127.0.0.1:8471. API dokumentatsioon on aadressil http://127.0.0.1:8471/docs.
 
-See loob PostgreSQL andmebaasi vajalikud tabelid.
-5. Demoandmed
-Käivita seeder:
-python -m uv run python -m backend.seed
+### 4. Käivita frontend
 
-Seeder lisab andmebaasi demoandmeid:
-- kinod
-- saalid
-- istekohad
-- filmid
-- kasutajad
-- seansid
-- piletid
-- arvustused
-Seeder loob näiteks:
-- 120 seanssi
-- 300 piletit
-- 300 istekohta
-- 50 arvustust
-Andmebaasi kontrollimine
-Mine Database kausta:
-cd ../Database
+Ava teine terminal ja jäta ka see lahti:
 
-Ava PostgreSQL terminal:
-docker compose exec db psql -U kino -d kino
+```bash
+cd Frontend
+npm install
+npm run dev
+```
 
-Näiteks saab kontrollida andmete arvu:
-SELECT COUNT(*) FROM sessions;
-SELECT COUNT(*) FROM tickets;
-SELECT COUNT(*) FROM seats;
-SELECT COUNT(*) FROM reviews;
+Ava brauseris http://localhost:5173.
 
-PostgreSQL terminalist väljumiseks:
-\q
+## Järgmised käivitamised
 
-Andmebaasi täielik nullimine
-Kui tahad andmebaasi täiesti puhtaks teha:
+Igaüks oma terminalis:
+
+```bash
+cd Database && docker compose up -d
+```
+
+```bash
+cd Backend && uv run fastapi dev main.py --port 8471
+```
+
+```bash
+cd Frontend && npm run dev
+```
+
+## Andmebaasi nullimine
+
+See kustutab kõik andmed ja loob uued demoandmed:
+
+```bash
+cd Database
 docker compose down -v
-
-Seejärel käivita uuesti:
 docker compose up -d
-
-Mine Backend kausta:
 cd ../Backend
-
-Rakenda migratsioonid:
-python -m uv run alembic upgrade head
-
-Lisa demoandmed:
-python -m uv run python -m backend.seed
+uv run alembic upgrade head
+uv run python -m backend.seed
+```
 
 Allikad
 FastAPI, SQLModel, SQLAlchemy Automap, Alembic, Django ja Django REST Framework.
