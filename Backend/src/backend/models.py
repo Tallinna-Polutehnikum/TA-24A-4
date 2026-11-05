@@ -4,6 +4,7 @@ from enum import Enum
 from sqlalchemy import CheckConstraint, Enum as SAEnum, UniqueConstraint, text
 from sqlmodel import Field, Relationship, SQLModel
 
+
 class SeatType(str, Enum):
     PREMIUM = "premium"
     SUPER_PREMIUM = "super_premium"
@@ -33,7 +34,11 @@ class Genre(str, Enum):
 
 
 def pg_enum(enum, name):
-    return SAEnum(enum, name=name, values_callable=lambda e: [m.value for m in e])
+    return SAEnum(
+        enum,
+        name=name,
+        values_callable=lambda e: [m.value for m in e]
+    )
 
 
 class CinemaLocation(SQLModel, table=True):
@@ -43,9 +48,15 @@ class CinemaLocation(SQLModel, table=True):
     name: str = Field(max_length=255)
     address: str = Field(max_length=255)
     hall_count: int
-    is_active: bool = Field(default=True, sa_column_kwargs={"server_default": text("true")})
 
-    halls: list["CinemaHall"] = Relationship(back_populates="location")
+    is_active: bool = Field(
+        default=True,
+        sa_column_kwargs={"server_default": text("true")}
+    )
+
+    halls: list["CinemaHall"] = Relationship(
+        back_populates="location"
+    )
 
 
 class CinemaHall(SQLModel, table=True):
@@ -57,7 +68,8 @@ class CinemaHall(SQLModel, table=True):
     seat_count: int
 
     location_id: int = Field(
-        foreign_key="cinema_locations.id"
+        foreign_key="cinema_locations.id",
+        index=True
     )
 
     location: CinemaLocation = Relationship(
@@ -73,7 +85,11 @@ class Movie(SQLModel, table=True):
     __tablename__ = "movies"
 
     id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(max_length=255)
+
+    name: str = Field(
+        max_length=255,
+        index=True
+    )
 
     genres: list["MovieGenre"] = Relationship(
         back_populates="movie"
@@ -87,6 +103,7 @@ class Movie(SQLModel, table=True):
         back_populates="movie"
     )
 
+
 class MovieGenre(SQLModel, table=True):
     __tablename__ = "movie_genres"
 
@@ -95,25 +112,34 @@ class MovieGenre(SQLModel, table=True):
         primary_key=True
     )
 
-    genre: Genre = Field(sa_type=pg_enum(Genre, "genre"), primary_key=True)
+    genre: Genre = Field(
+        sa_type=pg_enum(Genre, "genre"),
+        primary_key=True,
+        index=True
+    )
 
     movie: Movie = Relationship(
         back_populates="genres"
     )
+
 
 class Session(SQLModel, table=True):
     __tablename__ = "sessions"
 
     id: int | None = Field(default=None, primary_key=True)
 
-    start_time: datetime
+    start_time: datetime = Field(
+        index=True
+    )
 
     movie_id: int = Field(
-        foreign_key="movies.id"
+        foreign_key="movies.id",
+        index=True
     )
 
     hall_id: int = Field(
-        foreign_key="cinema_halls.id"
+        foreign_key="cinema_halls.id",
+        index=True
     )
 
     movie: Movie = Relationship(
@@ -128,13 +154,20 @@ class Session(SQLModel, table=True):
         back_populates="session"
     )
 
+
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
     id: int | None = Field(default=None, primary_key=True)
+
     first_name: str = Field(max_length=255)
     last_name: str = Field(max_length=255)
-    email: str = Field(max_length=255, unique=True)
+
+    email: str = Field(
+        max_length=255,
+        unique=True
+    )
+
     phone: str = Field(max_length=20)
 
     tickets: list["Ticket"] = Relationship(
@@ -145,40 +178,55 @@ class User(SQLModel, table=True):
         back_populates="user"
     )
 
+
 class Seat(SQLModel, table=True):
     __tablename__ = "seats"
 
     id: int | None = Field(default=None, primary_key=True)
+
     row: int
     number: int
-    seat_type: SeatType = Field(sa_type=pg_enum(SeatType, "seat_type"))
+
+    seat_type: SeatType = Field(
+        sa_type=pg_enum(SeatType, "seat_type")
+    )
 
     hall_id: int = Field(
-        foreign_key="cinema_halls.id"
+        foreign_key="cinema_halls.id",
+        index=True
     )
 
     tickets: list["Ticket"] = Relationship(
         back_populates="seat"
     )
 
+
 class Ticket(SQLModel, table=True):
     __tablename__ = "tickets"
-    __table_args__ = (UniqueConstraint("session_id", "seat_id"),)
+
+    __table_args__ = (
+        UniqueConstraint("session_id", "seat_id"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
 
-    ticket_type: TicketType = Field(sa_type=pg_enum(TicketType, "ticket_type"))
+    ticket_type: TicketType = Field(
+        sa_type=pg_enum(TicketType, "ticket_type")
+    )
 
     session_id: int = Field(
-        foreign_key="sessions.id"
+        foreign_key="sessions.id",
+        index=True
     )
 
     user_id: int = Field(
-        foreign_key="users.id"
+        foreign_key="users.id",
+        index=True
     )
 
     seat_id: int = Field(
-        foreign_key="seats.id"
+        foreign_key="seats.id",
+        index=True
     )
 
     session: Session = Relationship(
@@ -193,25 +241,37 @@ class Ticket(SQLModel, table=True):
         back_populates="tickets"
     )
 
+
 class Review(SQLModel, table=True):
     __tablename__ = "reviews"
-    __table_args__ = (CheckConstraint("stars >= 1 AND stars <= 5"),)
+
+    __table_args__ = (
+        CheckConstraint("stars >= 1 AND stars <= 5"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
 
     comment: str | None = None
-    stars: int | None = Field(default=None, ge=1, le=5)
+
+    stars: int | None = Field(
+        default=None,
+        ge=1,
+        le=5
+    )
+
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column_kwargs={"server_default": text("now()")},
     )
 
     user_id: int = Field(
-        foreign_key="users.id"
+        foreign_key="users.id",
+        index=True
     )
 
     movie_id: int = Field(
-        foreign_key="movies.id"
+        foreign_key="movies.id",
+        index=True
     )
 
     user: User = Relationship(
