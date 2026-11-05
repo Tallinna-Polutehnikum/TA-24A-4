@@ -177,3 +177,112 @@ python -m uv run python -m backend.seed
 
 Allikad
 FastAPI, SQLModel, SQLAlchemy Automap, Alembic, Django ja Django REST Framework.
+
+
+## Andmebaasi indeksid
+
+Projektis kasutame andmebaasi indekseid veergudel, mille järgi rakendus teeb otsinguid, filtreerimist või seotud andmete päringuid.
+
+Indeksid aitavad PostgreSQL-il vajalikke andmeid kiiremini leida. Indekseid ei lisata igale veerule, sest need võtavad lisaruumi ja võivad muuta andmete lisamise ning muutmise natuke aeglasemaks.
+
+Kasutatavad indeksid:
+
+- `movies.name`
+  - filmi nime järgi otsimiseks
+
+- `movie_genres.genre`
+  - filmide žanri järgi filtreerimiseks
+
+- `cinema_halls.location_id`
+  - kindla kino saalide leidmiseks
+
+- `sessions.movie_id`
+  - konkreetse filmi seansside leidmiseks
+
+- `sessions.hall_id`
+  - kindlas saalis toimuvate seansside leidmiseks
+
+- `sessions.start_time`
+  - seansside kuupäeva ja kellaaja järgi filtreerimiseks ning sorteerimiseks
+
+- `seats.hall_id`
+  - kindla saali istekohtade leidmiseks
+
+- `tickets.session_id`
+  - konkreetse seansi piletite leidmiseks
+
+- `tickets.user_id`
+  - kasutaja piletite ja broneeringute leidmiseks
+
+- `tickets.seat_id`
+  - istekoha broneeringute kontrollimiseks
+
+- `reviews.user_id`
+  - kasutaja arvustuste leidmiseks
+
+- `reviews.movie_id`
+  - konkreetse filmi arvustuste leidmiseks
+
+`users.email` on unikaalne väli. PostgreSQL loob unikaalsuse kontrollimiseks sellele juba indeksi, seega eraldi indeksit ei ole vaja lisada.
+
+## Vahemälu plaan
+
+Praegu ei ole rakenduses vahemälu veel realiseeritud. Tulevikus võiks kasutada järgmist vahemälu plaani.
+
+### Filmide nimekiri
+
+Vahemälu kestus: 5 minutit.
+
+Filmide nimekiri muutub harva, seega võib seda hoida vahemälus pikemalt.
+
+Vahemälu tühistatakse, kui:
+
+- lisatakse uus film
+- filmi andmeid muudetakse
+- film kustutatakse
+- filmi žanre muudetakse
+
+### Filmi detailandmed
+
+Vahemälu kestus: 5 minutit.
+
+Vahemälu tühistatakse, kui:
+
+- filmi andmeid muudetakse
+- filmi žanre muudetakse
+
+### Seansid
+
+Vahemälu kestus: 1 minut.
+
+Seansside andmed võivad muutuda sagedamini kui filmi põhiandmed.
+
+Vahemälu tühistatakse, kui:
+
+- lisatakse uus seanss
+- seansi aega muudetakse
+- seanss kustutatakse
+- seansi saali muudetakse
+
+### Istekohtade saadavus
+
+Vahemälu kestus: maksimaalselt 10 sekundit või seda ei salvestata vahemällu.
+
+Istekohtade saadavus võib broneeringute tõttu kiiresti muutuda.
+
+Vahemälu tühistatakse kohe, kui:
+
+- luuakse uus broneering või pilet
+- broneering tühistatakse
+- istekoha saadavus muutub
+
+### Piletid ja broneeringud
+
+Piletite ja broneeringute puhul ei kasutata pikka vahemälu, sest kasutajale peab kuvama võimalikult värsket infot.
+
+Kui vahemälu kasutatakse, tühistatakse see kohe pärast:
+
+- pileti loomist
+- broneeringu loomist
+- broneeringu muutmist
+- broneeringu tühistamist
