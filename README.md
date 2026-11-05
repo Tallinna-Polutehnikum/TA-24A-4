@@ -88,92 +88,190 @@ Broneerimisel peame lisaks API kontrollidele kasutama andmebaasi piiranguid ja t
 
 # Projekti käivitamine
 
-## 1. Environment failid
+Arvutis peavad olemas olema [Docker Desktop](https://www.docker.com/products/docker-desktop/), [uv](https://docs.astral.sh/uv/) ja [Node.js](https://nodejs.org/).
 
-Tee `Database/.env.example` põhjal uus fail:
-Database/.env
-Näiteks:
-POSTGRES_PASSWORD=change_me
+Kõik käsud käivita projekti põhikaustast (`Kino`).
 
-Seejärel tee Backendi jaoks fail:
-Backend/.env
+## Esimene käivitamine
 
-Näiteks:
-DATABASE_URL=postgresql+psycopg://kino:change_me@localhost:5432/kino
+### 1. Tee seadete failid
 
-Mõlemas failis peab olema sama PostgreSQL parool.
-2. PostgreSQL käivitamine Dockeriga
-Mine Database kausta:
+```bash
+echo "POSTGRES_PASSWORD=change_me" > Database/.env
+echo "DATABASE_URL=postgresql+psycopg://kino:change_me@localhost:5432/kino" > Backend/.env
+```
+
+### 2. Käivita andmebaas
+
+```bash
 cd Database
-
-Käivita andmebaas:
 docker compose up -d
+cd ..
+```
 
-Kontrolli, kas andmebaas töötab:
-docker compose ps
+### 3. Käivita backend
 
-Andmebaasi status peaks olema healthy.
-3. Backendi dependency'd
-Mine Backend kausta:
-cd ../Backend
+Ava uus terminal ja jäta see lahti:
 
-Installi vajalikud dependency'd:
-python -m uv sync
+```bash
+cd Backend
+uv sync
+uv run alembic upgrade head
+uv run python -m backend.seed
+uv run fastapi dev main.py --port 8471
+```
 
-4. Migratsioonid
-Käivita Alembic migratsioonid:
-python -m uv run alembic upgrade head
+Backend töötab aadressil http://127.0.0.1:8471. API dokumentatsioon on aadressil http://127.0.0.1:8471/docs.
 
-See loob PostgreSQL andmebaasi vajalikud tabelid.
-5. Demoandmed
-Käivita seeder:
-python -m uv run python -m backend.seed
+### 4. Käivita frontend
 
-Seeder lisab andmebaasi demoandmeid:
-- kinod
-- saalid
-- istekohad
-- filmid
-- kasutajad
-- seansid
-- piletid
-- arvustused
-Seeder loob näiteks:
-- 120 seanssi
-- 300 piletit
-- 300 istekohta
-- 50 arvustust
-Andmebaasi kontrollimine
-Mine Database kausta:
-cd ../Database
+Ava teine terminal ja jäta ka see lahti:
 
-Ava PostgreSQL terminal:
-docker compose exec db psql -U kino -d kino
+```bash
+cd Frontend
+npm install
+npm run dev
+```
 
-Näiteks saab kontrollida andmete arvu:
-SELECT COUNT(*) FROM sessions;
-SELECT COUNT(*) FROM tickets;
-SELECT COUNT(*) FROM seats;
-SELECT COUNT(*) FROM reviews;
+Ava brauseris http://localhost:5173.
 
-PostgreSQL terminalist väljumiseks:
-\q
+## Järgmised käivitamised
 
-Andmebaasi täielik nullimine
-Kui tahad andmebaasi täiesti puhtaks teha:
+Igaüks oma terminalis:
+
+```bash
+cd Database && docker compose up -d
+```
+
+```bash
+cd Backend && uv run fastapi dev main.py --port 8471
+```
+
+```bash
+cd Frontend && npm run dev
+```
+
+## Andmebaasi nullimine
+
+See kustutab kõik andmed ja loob uued demoandmed:
+
+```bash
+cd Database
 docker compose down -v
-
-Seejärel käivita uuesti:
 docker compose up -d
-
-Mine Backend kausta:
 cd ../Backend
-
-Rakenda migratsioonid:
-python -m uv run alembic upgrade head
-
-Lisa demoandmed:
-python -m uv run python -m backend.seed
+uv run alembic upgrade head
+uv run python -m backend.seed
+```
 
 Allikad
 FastAPI, SQLModel, SQLAlchemy Automap, Alembic, Django ja Django REST Framework.
+
+
+## Andmebaasi indeksid
+
+Projektis kasutame andmebaasi indekseid veergudel, mille järgi rakendus teeb otsinguid, filtreerimist või seotud andmete päringuid.
+
+Indeksid aitavad PostgreSQL-il vajalikke andmeid kiiremini leida. Indekseid ei lisata igale veerule, sest need võtavad lisaruumi ja võivad muuta andmete lisamise ning muutmise natuke aeglasemaks.
+
+Kasutatavad indeksid:
+
+- `movies.name`
+  - filmi nime järgi otsimiseks
+
+- `movie_genres.genre`
+  - filmide žanri järgi filtreerimiseks
+
+- `cinema_halls.location_id`
+  - kindla kino saalide leidmiseks
+
+- `sessions.movie_id`
+  - konkreetse filmi seansside leidmiseks
+
+- `sessions.hall_id`
+  - kindlas saalis toimuvate seansside leidmiseks
+
+- `sessions.start_time`
+  - seansside kuupäeva ja kellaaja järgi filtreerimiseks ning sorteerimiseks
+
+- `seats.hall_id`
+  - kindla saali istekohtade leidmiseks
+
+- `tickets.session_id`
+  - konkreetse seansi piletite leidmiseks
+
+- `tickets.user_id`
+  - kasutaja piletite ja broneeringute leidmiseks
+
+- `tickets.seat_id`
+  - istekoha broneeringute kontrollimiseks
+
+- `reviews.user_id`
+  - kasutaja arvustuste leidmiseks
+
+- `reviews.movie_id`
+  - konkreetse filmi arvustuste leidmiseks
+
+`users.email` on unikaalne väli. PostgreSQL loob unikaalsuse kontrollimiseks sellele juba indeksi, seega eraldi indeksit ei ole vaja lisada.
+
+## Vahemälu plaan
+
+Praegu ei ole rakenduses vahemälu veel realiseeritud. Tulevikus võiks kasutada järgmist vahemälu plaani.
+
+### Filmide nimekiri
+
+Vahemälu kestus: 5 minutit.
+
+Filmide nimekiri muutub harva, seega võib seda hoida vahemälus pikemalt.
+
+Vahemälu tühistatakse, kui:
+
+- lisatakse uus film
+- filmi andmeid muudetakse
+- film kustutatakse
+- filmi žanre muudetakse
+
+### Filmi detailandmed
+
+Vahemälu kestus: 5 minutit.
+
+Vahemälu tühistatakse, kui:
+
+- filmi andmeid muudetakse
+- filmi žanre muudetakse
+
+### Seansid
+
+Vahemälu kestus: 1 minut.
+
+Seansside andmed võivad muutuda sagedamini kui filmi põhiandmed.
+
+Vahemälu tühistatakse, kui:
+
+- lisatakse uus seanss
+- seansi aega muudetakse
+- seanss kustutatakse
+- seansi saali muudetakse
+
+### Istekohtade saadavus
+
+Vahemälu kestus: maksimaalselt 10 sekundit või seda ei salvestata vahemällu.
+
+Istekohtade saadavus võib broneeringute tõttu kiiresti muutuda.
+
+Vahemälu tühistatakse kohe, kui:
+
+- luuakse uus broneering või pilet
+- broneering tühistatakse
+- istekoha saadavus muutub
+
+### Piletid ja broneeringud
+
+Piletite ja broneeringute puhul ei kasutata pikka vahemälu, sest kasutajale peab kuvama võimalikult värsket infot.
+
+Kui vahemälu kasutatakse, tühistatakse see kohe pärast:
+
+- pileti loomist
+- broneeringu loomist
+- broneeringu muutmist
+- broneeringu tühistamist
