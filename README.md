@@ -88,7 +88,7 @@ Broneerimisel peame lisaks API kontrollidele kasutama andmebaasi piiranguid ja t
 
 # Projekti käivitamine
 
-Arvutis peavad olemas olema [Docker Desktop](https://www.docker.com/products/docker-desktop/), [uv](https://docs.astral.sh/uv/) ja [Node.js](https://nodejs.org/).
+Arvutis peavad olemas olema [Docker Desktop](https://www.docker.com/products/docker-desktop/), [uv](https://docs.astral.sh/uv/), [Node.js](https://nodejs.org/) ja [Bun](https://bun.sh/).
 
 Kõik käsud käivita projekti põhikaustast (`Kino`).
 
@@ -129,8 +129,8 @@ Ava teine terminal ja jäta ka see lahti:
 
 ```bash
 cd Frontend
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Ava brauseris http://localhost:5173.
@@ -148,7 +148,7 @@ cd Backend && uv run fastapi dev main.py --port 8471
 ```
 
 ```bash
-cd Frontend && npm run dev
+cd Frontend && bun run dev
 ```
 
 ## Andmebaasi nullimine
